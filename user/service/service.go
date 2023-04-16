@@ -1,23 +1,47 @@
 package service
 
 import (
-	userModel "rojgaarkaro-backend/user/model"
-	userRepo "rojgaarkaro-backend/user/repository"
+	userModel "fitcare-backend/user/model"
+	userRepo "fitcare-backend/user/repository"
 
 	"gorm.io/gorm"
 )
 
-func GetAllUsers(db *gorm.DB) (*[]userModel.User, error) {
+type Service struct {
+	Db   *gorm.DB
+	User *userModel.User
+}
+
+func NewService(db *gorm.DB, user *userModel.User) *Service {
+	return &Service{
+		Db:   db,
+		User: user,
+	}
+}
+
+type ServiceMethod interface {
+	GetAllUsers() (*[]userModel.User, error)
+	GetUser() (*userModel.User, error)
+	CreateUser() error
+	DeleteUser() error
+	UpdateUser() error
+	GetUserByEmail() (*userModel.User, error)
+}
+
+func (service *Service) GetAllUsers() (*[]userModel.User, error) {
 	// var result *[]userModel.User
-	result, err := userRepo.GetAllUsers(db)
+
+	repository := userRepo.NewRepository(service.Db, service.User)
+	result, err := repository.GetAllUsers()
 	if err != nil {
 		return nil, err
 	}
 	return result, nil
 }
 
-func GetUser(db *gorm.DB, userId string) (*userModel.User, error) {
-	result, err := userRepo.GetUser(db, userId)
+func (service *Service) GetUser() (*userModel.User, error) {
+	repository := userRepo.NewRepository(service.Db, service.User)
+	result, err := repository.GetUser()
 
 	if err != nil {
 		return nil, err
@@ -25,13 +49,25 @@ func GetUser(db *gorm.DB, userId string) (*userModel.User, error) {
 	return result, nil
 }
 
-func CreateUser(db *gorm.DB, user userModel.User) error {
-	err := userRepo.CreateUser(db, user)
+func (service *Service) GetUserByEmail() (*userModel.User, error) {
+	repository := userRepo.NewRepository(service.Db, service.User)
+	result, err := repository.GetUserByEmail()
+
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (service *Service) CreateUser() error {
+	repository := userRepo.NewRepository(service.Db, service.User)
+	err := repository.CreateUser()
 	return err
 }
 
-func DeleteUser(db *gorm.DB, userId string) error {
-	err := userRepo.DeleteUser(db, userId)
+func (service *Service) DeleteUser() error {
+	repository := userRepo.NewRepository(service.Db, service.User)
+	err := repository.DeleteUser()
 
 	if err != nil {
 		return err
@@ -39,11 +75,12 @@ func DeleteUser(db *gorm.DB, userId string) error {
 	return nil
 }
 
-func UpdateUser(db *gorm.DB, userId string, updatedUser userModel.User) error {
-	user, err := GetUser(db, userId)
+func (service *Service) UpdateUser() error {
+	user, err := service.GetUser()
 	if err != nil {
 		return err
 	}
+	updatedUser := service.User
 
 	if updatedUser.FirstName != "" {
 		user.FirstName = updatedUser.FirstName
@@ -66,7 +103,8 @@ func UpdateUser(db *gorm.DB, userId string, updatedUser userModel.User) error {
 	}
 	user.UpdatedAt = updatedUser.UpdatedAt
 
-	err = userRepo.UpdateUser(db, *user)
+	repository := userRepo.NewRepository(service.Db, service.User)
+	err = repository.UpdateUser()
 	if err != nil {
 		return err
 	}
