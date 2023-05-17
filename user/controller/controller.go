@@ -1,9 +1,9 @@
 package controller
 
 import (
-	authentication "fitcare-backend/authentication"
-	userModel "fitcare-backend/user/model"
-	userService "fitcare-backend/user/service"
+	authentication "rojgaarkaro-backend/authentication"
+	userModel "rojgaarkaro-backend/user/model"
+	userService "rojgaarkaro-backend/user/service"
 	"strconv"
 
 	"github.com/kataras/iris/v12"
@@ -18,8 +18,8 @@ func UserApis(app *iris.Application, DB *gorm.DB) {
 	{
 		AllUserApis.Post("/signin/{userEmail}/{userPassword}", checkUserExistance, authentication.GenerateToken)
 		AllUserApis.Get("/", authentication.VerifyMiddleware, getAllUsers)
-		AllUserApis.Get("/{userId}", authentication.VerifyMiddleware, getUser)
-		AllUserApis.Get("/{userEmail}", authentication.VerifyMiddleware, getUserByEmail)
+		AllUserApis.Get("/{userId}", getUser)
+		// AllUserApis.Get("/{userEmail}", authentication.VerifyMiddleware, getUserByEmail)
 		AllUserApis.Post("/{userEmail}", authentication.VerifyMiddleware, getUserByEmail, resetPassword)
 		AllUserApis.Post("/", createUser)
 		AllUserApis.Delete("/{userId}", authentication.VerifyMiddleware, deleteUser)
@@ -43,7 +43,6 @@ func checkUserExistance(ctx iris.Context) {
 		ctx.JSON("wrong password")
 		return
 	}
-	ctx.JSON(userExist)
 	ctx.Next()
 }
 
@@ -51,7 +50,7 @@ func getAllUsers(ctx iris.Context) {
 	service := &userService.Service{Db: db, User: &userModel.User{}}
 	result, err := service.GetAllUsers()
 	if err != nil {
-		ctx.JSON(err)
+		ctx.JSON(err.Error())
 		return
 	}
 	ctx.JSON(result)
@@ -60,12 +59,11 @@ func getAllUsers(ctx iris.Context) {
 func getUser(ctx iris.Context) {
 	userId := ctx.Params().Get("userId")
 	user := &userModel.User{}
-	user.ID, _ = strconv.Atoi(userId)
+	user.ID, _ = strconv.ParseInt(userId, 10, 64)
 	service := &userService.Service{Db: db, User: user}
 	result, err := service.GetUser()
 	if err != nil {
 		ctx.JSON(err.Error())
-
 		return
 	}
 	ctx.JSON(result)
@@ -120,7 +118,7 @@ func createUser(ctx iris.Context) {
 func deleteUser(ctx iris.Context) {
 	userId := ctx.Params().Get("userId")
 	user := &userModel.User{}
-	user.ID, _ = strconv.Atoi(userId)
+	user.ID, _ = strconv.ParseInt(userId, 10, 64)
 	service := &userService.Service{Db: db, User: user}
 	err := service.DeleteUser()
 	if err == nil {
@@ -134,7 +132,7 @@ func updateUser(ctx iris.Context) {
 	userId := ctx.Params().Get("userId")
 	updatedUser := &userModel.User{}
 	ctx.ReadJSON(&updatedUser)
-	updatedUser.ID, _ = strconv.Atoi(userId)
+	updatedUser.ID, _ = strconv.ParseInt(userId, 10, 64)
 	service := &userService.Service{Db: db, User: updatedUser}
 	err := service.UpdateUser()
 	if err == nil {

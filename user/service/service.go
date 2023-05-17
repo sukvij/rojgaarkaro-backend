@@ -1,8 +1,9 @@
 package service
 
 import (
-	userModel "fitcare-backend/user/model"
-	userRepo "fitcare-backend/user/repository"
+	"fmt"
+	userModel "rojgaarkaro-backend/user/model"
+	userRepo "rojgaarkaro-backend/user/repository"
 
 	"gorm.io/gorm"
 )
@@ -33,10 +34,7 @@ func (service *Service) GetAllUsers() (*[]userModel.User, error) {
 
 	repository := userRepo.NewRepository(service.Db, service.User)
 	result, err := repository.GetAllUsers()
-	if err != nil {
-		return nil, err
-	}
-	return result, nil
+	return result, err
 }
 
 func (service *Service) GetUser() (*userModel.User, error) {
@@ -44,6 +42,9 @@ func (service *Service) GetUser() (*userModel.User, error) {
 	result, err := repository.GetUser()
 
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, gorm.ErrRecordNotFound
+		}
 		return nil, err
 	}
 	return result, nil
@@ -52,8 +53,12 @@ func (service *Service) GetUser() (*userModel.User, error) {
 func (service *Service) GetUserByEmail() (*userModel.User, error) {
 	repository := userRepo.NewRepository(service.Db, service.User)
 	result, err := repository.GetUserByEmail()
+	fmt.Print("gmail result : ", result)
 
 	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, gorm.ErrRecordNotFound
+		}
 		return nil, err
 	}
 	return result, nil
@@ -61,18 +66,22 @@ func (service *Service) GetUserByEmail() (*userModel.User, error) {
 
 func (service *Service) CreateUser() error {
 	repository := userRepo.NewRepository(service.Db, service.User)
-	err := repository.CreateUser()
-	return err
+	// first we will checck whether gmail exist or not
+	_, err := service.GetUserByEmail()
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			err = repository.CreateUser()
+			return err
+		}
+		return err
+	}
+	return fmt.Errorf("email already exist")
 }
 
 func (service *Service) DeleteUser() error {
 	repository := userRepo.NewRepository(service.Db, service.User)
 	err := repository.DeleteUser()
-
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (service *Service) UpdateUser() error {
