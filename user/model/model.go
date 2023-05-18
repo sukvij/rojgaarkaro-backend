@@ -10,10 +10,11 @@ type User struct {
 	LastName  string `json:"last_name"`
 	Gender    string `json:"gender"`
 	Age       int    `json:"age"`
-	Contact   string
-	Email     string `validate:"required"`
-	Password  string
-	IsMember  bool
-	Priority  int
-	Verified  bool
+	Contact   string `json:"contact"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+	IsMember  bool   `json:"is_member"`
+	Priority  int    `json:"priority"`
+	Verified  bool   `json:"verified"`
+	Image     string `json:"image"`
 }

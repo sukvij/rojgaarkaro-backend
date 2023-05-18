@@ -2,6 +2,8 @@ package service
 
 import (
 	"fmt"
+	"mime/multipart"
+	awsUpload "rojgaarkaro-backend/aws/upload"
 	userModel "rojgaarkaro-backend/user/model"
 	userRepo "rojgaarkaro-backend/user/repository"
 
@@ -27,6 +29,24 @@ type ServiceMethod interface {
 	DeleteUser() error
 	UpdateUser() error
 	GetUserByEmail() (*userModel.User, error)
+	UploadFile(*multipart.FileHeader) error
+}
+
+func (service *Service) UploadFile(fileheader *multipart.FileHeader) error {
+	location, err := awsUpload.Upload(fileheader, service.User.ID)
+	if err != nil {
+		return err
+	}
+
+	// first we will get the user
+	service.User.Image = location
+	service.UpdateUser()
+	repository := userRepo.NewRepository(service.Db, service.User)
+	err = repository.UpdateUser()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (service *Service) GetAllUsers() (*[]userModel.User, error) {
@@ -109,6 +129,9 @@ func (service *Service) UpdateUser() error {
 
 	if updatedUser.Password != "" {
 		user.Password = updatedUser.Password
+	}
+	if updatedUser.Image != "" {
+		user.Image = updatedUser.Image
 	}
 	user.UpdatedAt = updatedUser.UpdatedAt
 

@@ -11,6 +11,7 @@ create table if not exists users(
 	priority int default 1,
 	verified bool default true,
 	created_at timestamp,
-	updated_at timestamp
+	updated_at timestamp,
+	image varchar
 );
 

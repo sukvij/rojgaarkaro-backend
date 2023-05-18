@@ -24,6 +24,7 @@ func UserApis(app *iris.Application, DB *gorm.DB) {
 		AllUserApis.Post("/", createUser)
 		AllUserApis.Delete("/{userId}", authentication.VerifyMiddleware, deleteUser)
 		AllUserApis.Put("/{userId}", authentication.VerifyMiddleware, updateUser)
+		AllUserApis.Post("/upload", uploadFile)
 		// AllUserApis.Get("/logout", authentication.VerifyMiddleware, authentication.Logout)
 	}
 }
@@ -140,4 +141,23 @@ func updateUser(ctx iris.Context) {
 	} else {
 		ctx.JSON(err.Error())
 	}
+}
+
+func uploadFile(ctx iris.Context) {
+
+	userId := ctx.FormValue("id")
+	file, fileHeader, err := ctx.FormFile("file")
+	if err != nil {
+		ctx.StopWithError(iris.StatusBadRequest, err)
+		return
+	}
+	user := &userModel.User{}
+	user.ID, _ = strconv.ParseInt(userId, 10, 64)
+	service := &userService.Service{Db: db, User: user}
+	err = service.UploadFile(fileHeader)
+	if err != nil {
+		ctx.JSON(err)
+	}
+	// ctx.Writef("File: %s uploaded!", fileHeader.Filename)
+	defer file.Close()
 }
