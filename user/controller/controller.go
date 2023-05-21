@@ -16,9 +16,9 @@ func UserApis(app *iris.Application, DB *gorm.DB) {
 	db = DB
 	AllUserApis := app.Party("/user")
 	{
-		AllUserApis.Post("/signin/{userEmail}/{userPassword}", checkUserExistance, authentication.GenerateToken)
+		AllUserApis.Post("/signin/{userEmail}/{userPassword}", checkUserExistance, authentication.GenerateToken, getUserByEmail)
 		AllUserApis.Get("/", authentication.VerifyMiddleware, getAllUsers)
-		AllUserApis.Get("/{userId}", getUser)
+		AllUserApis.Get("/{userId}", authentication.VerifyMiddleware, getUser)
 		// AllUserApis.Get("/{userEmail}", authentication.VerifyMiddleware, getUserByEmail)
 		AllUserApis.Post("/{userEmail}", authentication.VerifyMiddleware, getUserByEmail, resetPassword)
 		AllUserApis.Post("/", createUser)

@@ -27,7 +27,7 @@ func GenerateToken(ctx iris.Context) {
 	}
 
 	ctx.SetCookieKV("token", string(token))
-	ctx.Write(token)
+	ctx.Next()
 }
 
 func VerifyMiddleware(ctx iris.Context) {

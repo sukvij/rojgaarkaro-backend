@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	authentication "rojgaarkaro-backend/authentication"
 	database "rojgaarkaro-backend/database"
 	userController "rojgaarkaro-backend/user/controller"
@@ -10,12 +9,12 @@ import (
 )
 
 func main() {
+
+	// awsDownload.Download()
 	db, err := database.Connection()
 	if err != nil {
 		return
 	}
-
-	fmt.Println(db)
 	app := iris.New()
 	// crs := cors.New(cors.Options{
 	// 	AllowedOrigins:   []string{"*"},
@@ -27,4 +26,5 @@ func main() {
 	app.Get("/logout", authentication.VerifyMiddleware, authentication.Logout)
 	userController.UserApis(app, db)
 	app.Listen(":8080")
+
 }
