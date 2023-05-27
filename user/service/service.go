@@ -1,9 +1,7 @@
 package service
 
 import (
-	"fmt"
-	"mime/multipart"
-	awsUpload "rojgaarkaro-backend/aws/upload"
+	errorWithDetails "rojgaarkaro-backend/baseThing"
 	userModel "rojgaarkaro-backend/user/model"
 	userRepo "rojgaarkaro-backend/user/repository"
 
@@ -23,33 +21,33 @@ func NewService(db *gorm.DB, user *userModel.User) *Service {
 }
 
 type ServiceMethod interface {
-	GetAllUsers() (*[]userModel.User, error)
-	GetUser() (*userModel.User, error)
-	CreateUser() error
-	DeleteUser() error
-	UpdateUser() error
-	GetUserByEmail() (*userModel.User, error)
-	UploadFile(*multipart.FileHeader) error
+	GetAllUsers() (*[]userModel.User, errorWithDetails.ErrorWithDetails)
+	GetUser() (*userModel.User, errorWithDetails.ErrorWithDetails)
+	CreateUser() errorWithDetails.ErrorWithDetails
+	DeleteUser() errorWithDetails.ErrorWithDetails
+	UpdateUser() errorWithDetails.ErrorWithDetails
+	GetUserByEmail() (*userModel.User, errorWithDetails.ErrorWithDetails)
+	// UploadFile(*multipart.FileHeader) errorWithDetails.ErrorWithDetails
 }
 
-func (service *Service) UploadFile(fileheader *multipart.FileHeader) error {
-	location, err := awsUpload.Upload(fileheader, service.User.ID)
-	if err != nil {
-		return err
-	}
+// func (service *Service) UploadFile(fileheader *multipart.FileHeader) errorWithDetails.ErrorWithDetails {
+// 	location, err := awsUpload.Upload(fileheader, service.User.ID)
+// 	if err.Detail != "" {
+// 		return err
+// 	}
 
-	// first we will get the user
-	service.User.Image = location
-	service.UpdateUser()
-	repository := userRepo.NewRepository(service.Db, service.User)
-	err = repository.UpdateUser()
-	if err != nil {
-		return err
-	}
-	return nil
-}
+// 	// first we will get the user
+// 	service.User.Image = location
+// 	service.UpdateUser()
+// 	repository := userRepo.NewRepository(service.Db, service.User)
+// 	err1 := repository.UpdateUser()
+// 	if err1.Detail != "" {
+// 		return err1
+// 	}
+// 	return nil
+// }
 
-func (service *Service) GetAllUsers() (*[]userModel.User, error) {
+func (service *Service) GetAllUsers() (*[]userModel.User, errorWithDetails.ErrorWithDetails) {
 	// var result *[]userModel.User
 
 	repository := userRepo.NewRepository(service.Db, service.User)
@@ -57,56 +55,41 @@ func (service *Service) GetAllUsers() (*[]userModel.User, error) {
 	return result, err
 }
 
-func (service *Service) GetUser() (*userModel.User, error) {
+func (service *Service) GetUser() (*userModel.User, errorWithDetails.ErrorWithDetails) {
 	repository := userRepo.NewRepository(service.Db, service.User)
 	result, err := repository.GetUser()
-
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
-	}
-	return result, nil
+	return result, err
 }
 
-func (service *Service) GetUserByEmail() (*userModel.User, error) {
+func (service *Service) GetUserByEmail() (*userModel.User, errorWithDetails.ErrorWithDetails) {
 	repository := userRepo.NewRepository(service.Db, service.User)
 	result, err := repository.GetUserByEmail()
-	fmt.Print("gmail result : ", result)
-
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			return nil, gorm.ErrRecordNotFound
-		}
-		return nil, err
-	}
-	return result, nil
+	return result, err
 }
 
-func (service *Service) CreateUser() error {
+func (service *Service) CreateUser() errorWithDetails.ErrorWithDetails {
 	repository := userRepo.NewRepository(service.Db, service.User)
 	// first we will checck whether gmail exist or not
 	_, err := service.GetUserByEmail()
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
+	if err.Detail != "" {
+		if err.Status == 404 {
 			err = repository.CreateUser()
 			return err
 		}
 		return err
 	}
-	return fmt.Errorf("email already exist")
+	return errorWithDetails.ErrorWithDetails{Status: 409, Detail: "email already exist"}
 }
 
-func (service *Service) DeleteUser() error {
+func (service *Service) DeleteUser() errorWithDetails.ErrorWithDetails {
 	repository := userRepo.NewRepository(service.Db, service.User)
 	err := repository.DeleteUser()
 	return err
 }
 
-func (service *Service) UpdateUser() error {
+func (service *Service) UpdateUser() errorWithDetails.ErrorWithDetails {
 	user, err := service.GetUser()
-	if err != nil {
+	if err.Detail != "" {
 		return err
 	}
 	updatedUser := service.User
@@ -137,10 +120,10 @@ func (service *Service) UpdateUser() error {
 
 	repository := userRepo.NewRepository(service.Db, service.User)
 	err = repository.UpdateUser()
-	if err != nil {
+	if err.Detail != "" {
 		return err
 	}
-	return nil
+	return errorWithDetails.ErrorWithDetails{}
 
 	// we will update all the fields which are not null
 
