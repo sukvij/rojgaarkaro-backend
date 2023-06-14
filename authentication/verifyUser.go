@@ -40,6 +40,7 @@ func VerifyMiddleware(ctx iris.Context) {
 	}
 	ctx.Next()
 }
+
 func Logout(ctx iris.Context) {
 	cookie := iris.Cookie{
 		Name:     "token",

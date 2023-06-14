@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	authentication "rojgaarkaro-backend/authentication"
 	errorWithDetails "rojgaarkaro-backend/baseThing"
 	userModel "rojgaarkaro-backend/user/model"
@@ -25,7 +26,8 @@ func UserApis(app *iris.Application, DB *gorm.DB) {
 		AllUserApis.Post("/", createUser)
 		AllUserApis.Delete("/{userId}", authentication.VerifyMiddleware, deleteUser)
 		AllUserApis.Put("/{userId}", authentication.VerifyMiddleware, updateUser)
-		// AllUserApis.Post("/upload", uploadFile)
+		AllUserApis.Post("/image/upload", authentication.VerifyMiddleware, uploadFile)
+		AllUserApis.Get("/download/image", downloadImage)
 		// AllUserApis.Get("/logout", authentication.VerifyMiddleware, authentication.Logout)
 	}
 }
@@ -139,27 +141,43 @@ func updateUser(ctx iris.Context) {
 	service := &userService.Service{Db: db, User: updatedUser}
 	err := service.UpdateUser()
 	if err.Detail == "" {
+		user, errs := service.GetUser()
+		if errs.Detail != "" {
+			ctx.StopWithJSON(errs.Status, errs)
+		} else {
+			ctx.JSON(user)
+		}
 		ctx.JSON("user updated successfully")
 	} else {
 		ctx.StopWithJSON(err.Status, err)
 	}
 }
 
-// func uploadFile(ctx iris.Context) {
+func uploadFile(ctx iris.Context) {
 
-// 	userId := ctx.FormValue("id")
-// 	file, fileHeader, err := ctx.FormFile("file")
-// 	if err != nil {
-// 		ctx.StopWithError(iris.StatusBadRequest, err)
-// 		return
-// 	}
-// 	user := &userModel.User{}
-// 	user.ID, _ = strconv.ParseInt(userId, 10, 64)
-// 	service := &userService.Service{Db: db, User: user}
-// 	err = service.UploadFile(fileHeader)
-// 	if err != nil {
-// 		ctx.JSON(err)
-// 	}
-// 	// ctx.Writef("File: %s uploaded!", fileHeader.Filename)
-// 	defer file.Close()
-// }
+	userId := ctx.FormValue("id")
+	file, fileHeader, err := ctx.FormFile("file")
+	if err != nil {
+		ctx.StopWithError(iris.StatusBadRequest, err)
+		return
+	}
+	user := &userModel.User{}
+	user.ID, _ = strconv.ParseInt(userId, 10, 64)
+	service := &userService.Service{Db: db, User: user}
+	err1 := service.UploadFile(fileHeader)
+	if err1.Detail != "" {
+		fmt.Print("hi")
+		ctx.StopWithJSON(err1.Status, err1)
+	}
+	ctx.JSON("file upload successfully")
+	defer file.Close()
+}
+
+func downloadImage(ctx iris.Context) {
+	userId := ctx.FormValue("id")
+	user := &userModel.User{}
+	user.ID, _ = strconv.ParseInt(userId, 10, 64)
+	service := &userService.Service{Db: db, User: user}
+	err := service.DownloadFile()
+	ctx.JSON(err)
+}

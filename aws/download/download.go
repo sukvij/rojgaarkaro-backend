@@ -13,10 +13,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
-func Download() {
+func Download(item string) {
 	awsConfig := awsModel.GetAWSConfig()
 
-	item := "s3://rojgaarkaro/users/1.jpg"
+	// item = "https://rojgaarkaro.s3.ap-south-1.amazonaws.com/users/1.jpg"
 
 	file, err := os.Create(item)
 	if err != nil {
@@ -34,6 +34,7 @@ func Download() {
 
 	downloader := s3manager.NewDownloader(sess)
 
+	fmt.Println(downloader)
 	numBytes, err := downloader.Download(file,
 		&s3.GetObjectInput{
 			Bucket: aws.String(awsConfig.BucketName),

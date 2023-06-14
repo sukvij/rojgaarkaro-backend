@@ -13,7 +13,6 @@ type AWSConfig struct {
 
 func GetAWSConfig() AWSConfig {
 	var awsConfig AWSConfig
-
 	viper.SetConfigFile("config/config.env")
 	viper.ReadInConfig()
 	awsConfig.AccessKeyID = viper.Get("AWS_ACCESS_KEY_ID").(string)

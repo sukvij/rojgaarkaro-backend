@@ -1,6 +1,10 @@
 package service
 
 import (
+	"fmt"
+	"mime/multipart"
+	awsDownload "rojgaarkaro-backend/aws/download"
+	awsUpload "rojgaarkaro-backend/aws/upload"
 	errorWithDetails "rojgaarkaro-backend/baseThing"
 	userModel "rojgaarkaro-backend/user/model"
 	userRepo "rojgaarkaro-backend/user/repository"
@@ -27,25 +31,36 @@ type ServiceMethod interface {
 	DeleteUser() errorWithDetails.ErrorWithDetails
 	UpdateUser() errorWithDetails.ErrorWithDetails
 	GetUserByEmail() (*userModel.User, errorWithDetails.ErrorWithDetails)
-	// UploadFile(*multipart.FileHeader) errorWithDetails.ErrorWithDetails
+	UploadFile(*multipart.FileHeader) errorWithDetails.ErrorWithDetails
+	DownloadFile() errorWithDetails.ErrorWithDetails
 }
 
-// func (service *Service) UploadFile(fileheader *multipart.FileHeader) errorWithDetails.ErrorWithDetails {
-// 	location, err := awsUpload.Upload(fileheader, service.User.ID)
-// 	if err.Detail != "" {
-// 		return err
-// 	}
+func (service *Service) UploadFile(fileheader *multipart.FileHeader) errorWithDetails.ErrorWithDetails {
+	location, err := awsUpload.Upload(fileheader, service.User.ID)
+	if err != nil {
+		return errorWithDetails.ErrorWithDetails{Status: 10011010, Detail: "aws upload file error"}
+	}
 
-// 	// first we will get the user
-// 	service.User.Image = location
-// 	service.UpdateUser()
-// 	repository := userRepo.NewRepository(service.Db, service.User)
-// 	err1 := repository.UpdateUser()
-// 	if err1.Detail != "" {
-// 		return err1
-// 	}
-// 	return nil
-// }
+	fmt.Println("2")
+	// first we will get the user
+	service.User.Image = location
+	service.UpdateUser()
+	repository := userRepo.NewRepository(service.Db, service.User)
+	err1 := repository.UpdateUser()
+	if err1.Detail != "" {
+		return err1
+	}
+	return errorWithDetails.ErrorWithDetails{}
+}
+
+func (service *Service) DownloadFile() errorWithDetails.ErrorWithDetails {
+	user, err := service.GetUser()
+	if err.Detail != "" {
+		return err
+	}
+	awsDownload.Download(user.Image)
+	return errorWithDetails.ErrorWithDetails{}
+}
 
 func (service *Service) GetAllUsers() (*[]userModel.User, errorWithDetails.ErrorWithDetails) {
 	// var result *[]userModel.User
@@ -118,7 +133,7 @@ func (service *Service) UpdateUser() errorWithDetails.ErrorWithDetails {
 	}
 	user.UpdatedAt = updatedUser.UpdatedAt
 
-	repository := userRepo.NewRepository(service.Db, service.User)
+	repository := userRepo.NewRepository(service.Db, user)
 	err = repository.UpdateUser()
 	if err.Detail != "" {
 		return err
